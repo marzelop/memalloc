@@ -1,18 +1,37 @@
 #include "main.h"
 
-int main() {
-	long *p;
-	long used;
-	long size;
-	setup_brk();
-	printf("%p\n", brkv);
-	printf("%d\n", p = memory_alloc(8));
-	*p = 4;
-	used = p[-2];
-	size = p[-1];
-	printf("%ld %ld %ld\n", used, size, *p);
+typedef struct heap_block {
+	unsigned long used;
+	unsigned long size;
+	void *blk;
+} tHeapBlock;
 
-	printf("%p %p\n", p, brkv);
-	
+tHeapBlock getHeapBlock(void *p) { 
+	tHeapBlock hb = {
+		.used = ((long*) p)[-2],
+		.size = ((long*) p)[-1],
+		.blk = p
+	};
+
+	return hb;
+}
+
+void printHeapBlock(tHeapBlock *hb) {
+	printf("BLK: %p\nUsed: %s\nSize: %lu\n", hb->blk, hb->used == 1 ? "yes" : "no", hb->size);
+}
+
+int main() {
+	long *p, *q;
+	tHeapBlock hb;
+	setup_brk();
+	printf("brk: %p\n", brkv);
+	p = memory_alloc(10);
+	q = memory_alloc(20);
+	printf("p: %p\n", p);
+	hb = getHeapBlock(p);
+	printHeapBlock(&hb);
+	// hb = getHeapBlock(q);
+	// printHeapBlock(&hb);
+
 	return 0;
 }

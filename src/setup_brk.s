@@ -30,21 +30,23 @@ dismiss_brk:
 memory_alloc:
 	movq heap_start, %r8	# %r8 = heap_start
 	movq brkv, %r9			# %r9 = brkv
+	movq %r9, %rsi			# %rsi = brkv
 	movq $0, %r10			# %r10 = NULL
 	# Retorna o endereço do registro primeiro bloco com tamanho suficiente para a 
 	# alocação no registrador %r10. Caso %r10 seja NULL, nenhum bloco disponível é 
 	# grande o suficiente.
 	_first_fit_i:
 		cmp %r8, %r9		# if curr_blk >= brkv -> endloop
-		jge _first_fit_e
+		jle _first_fit_e
 		cmpq $1, (%r8)		# if blk_unavailable -> next iter
 		je _next_block
 		cmpq %rdi, 8(%r8)	# if blk_size < bytes -> next iter
-		jg _next_block
+		jl _next_block
 		movq %r8, %r10		
 		jmp _first_fit_e
 		_next_block:
-		addq 8(%r8), %r8 	# curr_blk += blk_size
+		movq 8(%r8), %rax
+		addq %rax, %r8 	# curr_blk += blk_size
 		jmp _first_fit_i
 	_first_fit_e:
 	cmp $0, %r10			# if %r10 == NULL
@@ -52,8 +54,35 @@ memory_alloc:
 	movq $1, (%r10)			# marca o bloco como usado
 	movq 8(%r10), %r8		# %r8 = blk_size
 	subq %rdi, %r8			# %r8 = blk_size - bytes
-	cmp $16, %r8
-	jge _skip_blk_break
-	movq %rdi, %rsi			# %rsi = bytes
-	movq brkv, %rdx			# %rdx = brkv
-	addq %rdx, %rdi			# %rdi = brkv + bytes
+	cmp $16, %r8			# if blk_size - bytes <= 16 -> don't break block
+	jle _skip_blk_break
+	movq %rdi, 8(%r10)		# blk_size = bytes
+	movq %r10, %r11			# %r9 = blk_reg
+	addq $16, %r11			# %r9 += 16
+	addq %rdi, %r11			# %r9 += bytes -> %r9 = new_blk_reg
+	movq $0, (%r11)			# Marca o novo bloco como disponível
+	subq $16, %r8			# subtrai o tamanho de um registro em %r8
+	movq %r8, 8(%r11)		# new_blk_size = blk_size - bytes - 16
+	_skip_blk_break:
+	movq %r10, %rax
+	addq $16, %rax
+	ret
+	_create_new_blk:
+	movq %rdi, %r8			# %r8 = bytes
+	addq $16, %r9			# %rdi += reg_size (16)
+	addq %r9, %rdi			# %rdi = brkv + bytes + reg_size -> %rdi = new_brkv
+	movq $12, %rax			# syscall brk
+	syscall
+	cmp $0, %rax			# if brk fail -> handle error
+	je _new_blk_fail
+	movq %rdi, brkv
+	movq %rdi, %rax			# %rax = brkv + bytes + reg_size
+	subq $16, %rax			# %rax = brkv + bytes
+	subq %r8, %rax			# %rax = brkv
+	movq $1, (%rax)			# Marca novo bloco como usado
+	movq %r8, 8(%rax)		# Atribui o valor do tamanho do bloco
+	addq $16, %rax			# %rax = brkv + 16 -> new_blk
+	ret
+	_new_blk_fail:
+	movq $0, %rax			# %rax = NULL
+	ret
