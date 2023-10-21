@@ -9,4 +9,6 @@ void dismiss_brk();
 
 void *memory_alloc(unsigned long bytes);
 
+unsigned long int memory_free(void *pointer);
+
 #endif

@@ -9,6 +9,8 @@
 .type dismiss_brk, @function
 .global memory_alloc
 .type memory_alloc, @function
+.global memory_free
+.type memory_free, @function
 .global brkv
 
 setup_brk:
@@ -28,6 +30,11 @@ dismiss_brk:
 # void *memory_alloc(unsigned int bytes);
 # bytes é um parâmetro passado como argumento no registrador %rdi
 memory_alloc:
+	cmpq $0, %rdi			# if bytes == 0 -> return NULL
+	jne _non_zero_bytes
+	movq $0, %rax
+	ret
+	_non_zero_bytes:
 	movq heap_start, %r8	# %r8 = heap_start
 	movq brkv, %r9			# %r9 = brkv
 	movq %r9, %rsi			# %rsi = brkv
@@ -45,8 +52,8 @@ memory_alloc:
 		movq %r8, %r10		
 		jmp _first_fit_e
 		_next_block:
-		movq 8(%r8), %rax
-		addq %rax, %r8 	# curr_blk += blk_size
+		addq 8(%r8), %r8 	# curr_blk += blk_size
+		addq $16, %r8		# curr_blk += reg_size
 		jmp _first_fit_i
 	_first_fit_e:
 	cmp $0, %r10			# if %r10 == NULL
@@ -85,4 +92,14 @@ memory_alloc:
 	ret
 	_new_blk_fail:
 	movq $0, %rax			# %rax = NULL
+	ret
+
+# Marca um bloco como livre
+# Recebe o endereço do bloco que deve ser liberado em %rdi
+memory_free:
+	cmp $0, %rdi
+	je _free_null
+	movq $0, -16(%rdi)
+	_free_null:
+	movq $0, %rax
 	ret
