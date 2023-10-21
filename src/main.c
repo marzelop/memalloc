@@ -17,7 +17,7 @@ void printHeapBlockInfo(void *p) {
 }
 
 int main() {
-	void *p[PTR_NUM], *q, *r;
+	void *p[PTR_NUM], *q, *r, *nb;
 	int i;
 	setup_brk();
 	printf("brk: %p\n", brkv);
@@ -51,6 +51,10 @@ int main() {
 	printHeapBlockInfo(r);
 	printf("Alocou no mesmo lugar de p[%d]? %s\n", PTR_NUM-1, p[PTR_NUM-1] == r ? "Sim, está correto." : "Não, está errado.");
 	printf("O bloco deve conter 50 bytes, porque é possível quebrar em dois blocos. %s\n\n", getBlockSize(r) == 50 ? "Correto" : "Errado");
+	nb = r + 50 + 16;
+	printf("Novo bloco:\n");
+	printHeapBlockInfo(nb);
+	// printf("O novo bloco vazio deve conter %lu bytes. Que seria %lu - 50 - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n\n", 10*i - 50 - 16, 10*i, getBlockSize(nb) == 10*i - 50 - 16 ? "Correto" : "Errado");
 
 	return 0;
 }

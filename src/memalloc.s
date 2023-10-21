@@ -64,9 +64,9 @@ memory_alloc:
 	cmp $16, %r8			# if blk_size - bytes <= 16 -> don't break block
 	jle _skip_blk_break
 	movq %rdi, 8(%r10)		# blk_size = bytes
-	movq %r10, %r11			# %r9 = blk_reg
-	addq $16, %r11			# %r9 += 16
-	addq %rdi, %r11			# %r9 += bytes -> %r9 = new_blk_reg
+	movq %r10, %r11			# %r11 = blk_reg
+	addq $16, %r11			# %r11 += 16
+	addq %rdi, %r11			# %r11 += bytes -> %r11 = new_blk_reg
 	movq $0, (%r11)			# Marca o novo bloco como disponível
 	subq $16, %r8			# subtrai o tamanho de um registro em %r8
 	movq %r8, 8(%r11)		# new_blk_size = blk_size - bytes - 16
