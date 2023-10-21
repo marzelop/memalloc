@@ -6,7 +6,7 @@ OBJDIR=build
 CFLAGS=-Wall -g -no-pie
 LFLAGS=-lm
 ASMFLAGS=-fPIC
-OBJNAMES=setup_brk.o main.o
+OBJNAMES=memalloc.o main.o
 OBJS=$(foreach OBJ, $(OBJNAMES),  $(OBJDIR)/$(OBJ))
 
 all: $(PROGRAMNAME)
