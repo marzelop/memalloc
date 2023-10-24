@@ -24,6 +24,7 @@ setup_brk:
 dismiss_brk:
 	movq $12, %rax			# syscall brk
 	movq heap_start, %rdi 	# %rdi = valor inicial de brk
+	movq %rdi, brkv
 	syscall					# restaura o valor de brk para o valor inicial
 	ret
 
@@ -37,7 +38,6 @@ memory_alloc:
 	_non_zero_bytes:
 	movq heap_start, %r8	# %r8 = heap_start
 	movq brkv, %r9			# %r9 = brkv
-	movq %r9, %rsi			# %rsi = brkv
 	movq $0, %r10			# %r10 = NULL
 	# Retorna o endereço do registro primeiro bloco com tamanho suficiente para a 
 	# alocação no registrador %r10. Caso %r10 seja NULL, nenhum bloco disponível é 
@@ -67,17 +67,18 @@ memory_alloc:
 	movq %r10, %r11			# %r11 = blk_reg
 	addq $16, %r11			# %r11 += 16
 	addq %rdi, %r11			# %r11 += bytes -> %r11 = new_blk_reg
-	movq $0, (%r11)			# Marca o novo bloco como disponível
+	movq $0, 0(%r11)		# Marca o novo bloco como disponível
 	subq $16, %r8			# subtrai o tamanho de um registro em %r8
 	movq %r8, 8(%r11)		# new_blk_size = blk_size - bytes - 16
 	_skip_blk_break:
-	movq %r10, %rax
-	addq $16, %rax
+	movq %r10, %rax			# %rax = new_blk_reg
+	addq $16, %rax			# %rax += reg_size -> new_blk
 	ret
 	_create_new_blk:
 	movq %rdi, %r8			# %r8 = bytes
 	addq $16, %r9			# %rdi += reg_size (16)
 	addq %r9, %rdi			# %rdi = brkv + bytes + reg_size -> %rdi = new_brkv
+
 	movq $12, %rax			# syscall brk
 	syscall
 	cmp $0, %rax			# if brk fail -> handle error
@@ -97,9 +98,9 @@ memory_alloc:
 # Marca um bloco como livre
 # Recebe o endereço do bloco que deve ser liberado em %rdi
 memory_free:
-	cmp $0, %rdi
+	cmp $0, %rdi			# if addr == NULL -> ret 0
 	je _free_null
-	movq $0, -16(%rdi)
+	movq $0, -16(%rdi)		# marca o bloco como disponível
 	_free_null:
-	movq $0, %rax
+	movq $0, %rax			# retorna 0
 	ret

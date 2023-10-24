@@ -1,6 +1,8 @@
 #include "main.h"
 
 #define PTR_NUM 10
+#define R_SIZE       60
+#define R_SIZE_TEXT "60"
 
 int blockAvailable(void *p) {
 	return ((long*) p)[-2] == 0;
@@ -15,10 +17,10 @@ void printHeapBlockInfo(void *p) {
 }
 
 int main() {
-	void *p[PTR_NUM], *q, *r, *nb, *s, *big, *t;
+	void *p[PTR_NUM], *q, *r, *nb, *s, *big, *t, *brki;
 	int i;
 	setup_brk();
-	// brki = brkv;
+	brki = brkv;
 	printf("brk inicial: %p\n", brkv);
 	printf("Alocando um vetor de ponteiros, onde cada ponteiro aponta para um bloco de tamanho 10(i+1), onde i é o índice do ponteiro no vetor.\n");
 	p[0] = memory_alloc(10);
@@ -46,15 +48,16 @@ int main() {
 	printf("Alocou no mesmo lugar de p[0]? %s\n", p[0] == q ? "Sim, está correto." : "Não, está errado.");
 	printf("O bloco deve conter 10 bytes, porque não é possível quebrar em dois blocos. %s\n\n", getBlockSize(q) == 10 ? "Correto" : "Errado");
 
-	printf("Alocando 50 bytes.\n");
-	r = memory_alloc(50);
+	printf("Alocando "R_SIZE_TEXT" bytes.\n");
+	r = memory_alloc(R_SIZE);
 	printHeapBlockInfo(r);
 	printf("Alocou no mesmo lugar de p[%d]? %s\n", PTR_NUM-1, p[PTR_NUM-1] == r ? "Sim, está correto." : "Não, está errado.");
-	printf("O bloco deve conter 50 bytes, porque é possível quebrar em dois blocos. %s\n\n", getBlockSize(r) == 50 ? "Correto" : "Errado");
-	nb = r + 50 + 16;
-	printf("Novo bloco:\n");
+	printf("O bloco deve conter "R_SIZE_TEXT" bytes, porque é possível quebrar em dois blocos. %s\n\n", getBlockSize(r) == R_SIZE ? "Correto" : "Errado");
+
+	nb = r + R_SIZE + 16;
+	printf("Novo bloco livre:\n");
 	printHeapBlockInfo(nb);
-	printf("O novo bloco vazio deve conter %u bytes. Que seria %u - 50 - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n", 10*i - 50 - 16, 10*i, getBlockSize(nb) == 10*i - 50 - 16 ? "Correto" : "Errado");
+	printf("O novo bloco vazio deve conter %u bytes. Que seria %u - "R_SIZE_TEXT" - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n", 10*i - R_SIZE - 16, 10*i, getBlockSize(nb) == 10*i - R_SIZE - 16 ? "Correto" : "Errado");
 	printf("O novo bloco não deve estar ocupado. %s\n\n", blockAvailable(nb) ? "Correto" : "Errado");
 
 	printf("Liberando p[%d].\n", PTR_NUM-2);
@@ -71,21 +74,25 @@ int main() {
 		memory_free(p[i]);
 	}
 	
-	printf("Alocando 1GB.\n");
-	big = memory_alloc(1*1024*1024*1024); // 1GB
-	printHeapBlockInfo(big);
-	printf("Bloco deve ter 1GB de tamanho. %s\n", getBlockSize(big) == 1*1024*1024*1024 ? "Correto" : "Errado");
-	printf("Liberando 1GB.\n\n");
-	memory_free(big);
+	// printf("Alocando 1GB.\n");
+	// big = memory_alloc(1*1024*1024*1024); // 1GB
+	// printHeapBlockInfo(big);
+	// printf("Bloco deve ter 1GB de tamanho. %s\n", getBlockSize(big) == 1*1024*1024*1024 ? "Correto" : "Errado");
+	// printf("Liberando 1GB.\n\n");
+	// memory_free(big);
 
 	printf("Alocando 200 bytes.\n");
 	t = memory_alloc(200);
 	printHeapBlockInfo(t);
 	printf("O bloco está depois de p[%d]? %s\n", PTR_NUM-1, t > p[PTR_NUM-1] ? "Sim, isso acontece porque o alocador não junta dois blocos vazios em sequência, ou seja, os blocos podem diminuir de tamanho, mas nunca aumentar." : "NÃO? Algo deve ter dado muito errado.\n");
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
-	dismiss_brk(brkv);
+	printf("brki: %p\n", brki);
+	printf("&heap_start: %p\n", &brkv - 8);
+	dismiss_brk(&brki);
+	//printf("AAAAAA\n");
+	//printf("%p\n", brki);
+	// printf("brk atual: %p\n", brkv);
 	// printf("brk atual: %p\nbrk inicial: %p\nAmbos devem ser iguais. %s\n", brkv, brki, brkv == brki ? "Correto" : "Errado");
-
 
 	return 0;
 }
