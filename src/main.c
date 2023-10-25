@@ -1,8 +1,8 @@
 #include "main.h"
 
 #define PTR_NUM 10
-#define R_SIZE       60
-#define R_SIZE_TEXT "60"
+#define R_SIZE       56
+#define R_SIZE_TEXT "56"
 
 int blockAvailable(void *p) {
 	return ((long*) p)[-2] == 0;
@@ -59,6 +59,7 @@ int main() {
 	printHeapBlockInfo(nb);
 	printf("O novo bloco vazio deve conter %u bytes. Que seria %u - "R_SIZE_TEXT" - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n", 10*i - R_SIZE - 16, 10*i, getBlockSize(nb) == 10*i - R_SIZE - 16 ? "Correto" : "Errado");
 	printf("O novo bloco não deve estar ocupado. %s\n\n", blockAvailable(nb) ? "Correto" : "Errado");
+	printf("brkv: %p\n", brkv);
 
 	printf("Liberando p[%d].\n", PTR_NUM-2);
 	memory_free(p[PTR_NUM-2]);
@@ -88,7 +89,7 @@ int main() {
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
 	printf("brki: %p\n", brki);
 	printf("&heap_start: %p\n", &brkv - 8);
-	dismiss_brk(&brki);
+	dismiss_brk();
 	//printf("AAAAAA\n");
 	//printf("%p\n", brki);
 	// printf("brk atual: %p\n", brkv);

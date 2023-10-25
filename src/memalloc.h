@@ -5,7 +5,7 @@ extern void *brkv;
 
 void setup_brk();
 
-void *dismiss_brk(void **ret);
+void *dismiss_brk();
 
 void *memory_alloc(unsigned long bytes);
 

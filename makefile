@@ -9,10 +9,13 @@ ASMFLAGS=-fPIC
 OBJNAMES=memalloc.o main.o
 OBJS=$(foreach OBJ, $(OBJNAMES),  $(OBJDIR)/$(OBJ))
 
-all: $(PROGRAMNAME)
+all: $(PROGRAMNAME) teste
 
 $(PROGRAMNAME): $(OBJS)
-	$(CC) -o $(PROGRAMNAME) $(OBJS) $(CFLAGS) $(LFLAGS) $(LIKWID)
+	$(CC) -o $(PROGRAMNAME) $(OBJS) $(CFLAGS) $(LFLAGS)
+
+teste: build/teste.o build/memalloc.o
+	$(CC) -o teste $^ $(CFLAGS) $(LFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/%.h
 	$(CC) $(CFLAGS) -c $< -o $@

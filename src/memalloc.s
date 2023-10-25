@@ -1,6 +1,6 @@
 .section .data
-	heap_start: .quad 0
-	brkv: .quad 0
+	heap_start: .quad 1
+	brkv: .quad 1
 
 .section .text
 .global setup_brk
