@@ -1,8 +1,8 @@
 #include "teste.h"
 
 #define PTR_NUM 16
-#define R_SIZE       32
-#define R_SIZE_TEXT "32"
+#define R_SIZE       64
+#define R_SIZE_TEXT "64"
 
 int blockAvailable(void *p) {
 	return ((long*) p)[-2] == 0; 
@@ -13,7 +13,7 @@ unsigned long getBlockSize(void *p) {
 }
 
 void printHeapBlockInfo(void *p) {
-	printf("BLK: %p\nUsed: %s\nSize: %lu\n", p, !blockAvailable(p) ? "yes" : "no", getBlockSize(p));
+	printf("BLK: %p\nUsed: %s\nSize: %p\n", p, !blockAvailable(p) ? "yes" : "no", getBlockSize(p));
 }
 
 int main() {

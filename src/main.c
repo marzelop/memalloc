@@ -1,8 +1,8 @@
 #include "main.h"
 
 #define PTR_NUM 10
-#define R_SIZE       56
-#define R_SIZE_TEXT "56"
+#define R_SIZE       48
+#define R_SIZE_TEXT "48"
 
 int blockAvailable(void *p) {
 	return ((long*) p)[-2] == 0;
@@ -12,8 +12,17 @@ unsigned long getBlockSize(void *p) {
 	return ((unsigned long*) p)[-1];
 }
 
+// Printa as informações de um bloco (tamanho, disponibilidade e endereço)
 void printHeapBlockInfo(void *p) {
 	printf("BLK: %p\nUsed: %s\nSize: %lu\n", p, !blockAvailable(p) ? "yes" : "no", getBlockSize(p));
+}
+
+// Printa os valores de uma região da memória em torno de um ponteiro p
+void printMemSegment(void *p, unsigned long before, unsigned long after) {
+	for (unsigned long *i = p - before; (void *) i < p + after; i++) {
+		printf("%016lx ", *i);
+	}
+	printf("\n");
 }
 
 int main() {
@@ -23,6 +32,7 @@ int main() {
 	brki = brkv;
 	printf("brk inicial: %p\n", brkv);
 	printf("Alocando um vetor de ponteiros, onde cada ponteiro aponta para um bloco de tamanho 10(i+1), onde i é o índice do ponteiro no vetor.\n");
+	// Aloca vários blocos e verifica se a distância entre os endereços é um valor esperado
 	p[0] = memory_alloc(10);
 	for (i = 1; i < PTR_NUM; i++) {
 		p[i] = memory_alloc(10*(i + 1));
@@ -54,13 +64,16 @@ int main() {
 	printf("Alocou no mesmo lugar de p[%d]? %s\n", PTR_NUM-1, p[PTR_NUM-1] == r ? "Sim, está correto." : "Não, está errado.");
 	printf("O bloco deve conter "R_SIZE_TEXT" bytes, porque é possível quebrar em dois blocos. %s\n\n", getBlockSize(r) == R_SIZE ? "Correto" : "Errado");
 
+	/* Região em que é visível a ocorrência do erro*/
 	nb = r + R_SIZE + 16;
 	printf("Novo bloco livre:\n");
 	printHeapBlockInfo(nb);
 	printf("O novo bloco vazio deve conter %u bytes. Que seria %u - "R_SIZE_TEXT" - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n", 10*i - R_SIZE - 16, 10*i, getBlockSize(nb) == 10*i - R_SIZE - 16 ? "Correto" : "Errado");
 	printf("O novo bloco não deve estar ocupado. %s\n\n", blockAvailable(nb) ? "Correto" : "Errado");
-	printf("brkv: %p\n", brkv);
+	printMemSegment(nb, 16, 32); // imprime as quadwords da memória na região do novo bloco em hexadecimal
+	// 16 bytes antes e 32 bytes depois
 
+	// Teste para verificação do first-fit
 	printf("Liberando p[%d].\n", PTR_NUM-2);
 	memory_free(p[PTR_NUM-2]);
 	printf("Alocando 30 bytes. Que cabem no último bloco livre e no penúltimo bloco livre.\n");
@@ -75,6 +88,7 @@ int main() {
 		memory_free(p[i]);
 	}
 	
+	// Teste com grande alocação
 	// printf("Alocando 1GB.\n");
 	// big = memory_alloc(1*1024*1024*1024); // 1GB
 	// printHeapBlockInfo(big);
@@ -82,6 +96,8 @@ int main() {
 	// printf("Liberando 1GB.\n\n");
 	// memory_free(big);
 
+	// Aparentemente a alocação de 200 bytes funciona apesar do problema na alocação anterior
+	// Talvez a liberação de memória interfere em algo, mas não sei
 	printf("Alocando 200 bytes.\n");
 	t = memory_alloc(200);
 	printHeapBlockInfo(t);
@@ -89,6 +105,7 @@ int main() {
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
 	printf("brki: %p\n", brki);
 	printf("&heap_start: %p\n", &brkv - 8);
+	// Problemas de Segmentatio Fault abaixo, irei resolver depois
 	dismiss_brk();
 	//printf("AAAAAA\n");
 	//printf("%p\n", brki);

@@ -64,12 +64,12 @@ memory_alloc:
 	cmp $16, %r8			# if blk_size - bytes <= 16 -> don't break block
 	jle _skip_blk_break
 	movq %rdi, 8(%r10)		# blk_size = bytes
-	movq %r10, %r11			# %r11 = blk_reg
-	addq $16, %r11			# %r11 += 16
-	addq %rdi, %r11			# %r11 += bytes -> %r11 = new_blk_reg
-	movq $0, 0(%r11)		# Marca o novo bloco como disponível
+	movq %r10, %r9			# %r9 = blk_reg
+	addq $16, %r9			# %r9 += 16
+	addq %rdi, %r9			# %r9 += bytes -> %r11 = new_blk_reg
+	movq $0, 0(%r9)			# Marca o novo bloco como disponível
 	subq $16, %r8			# subtrai o tamanho de um registro em %r8
-	movq %r8, 8(%r11)		# new_blk_size = blk_size - bytes - 16
+	movq %r8, 8(%r9)		# new_blk_size = blk_size - bytes - 16
 	_skip_blk_break:
 	movq %r10, %rax			# %rax = new_blk_reg
 	addq $16, %rax			# %rax += reg_size -> new_blk
@@ -78,11 +78,10 @@ memory_alloc:
 	movq %rdi, %r8			# %r8 = bytes
 	addq $16, %r9			# %rdi += reg_size (16)
 	addq %r9, %rdi			# %rdi = brkv + bytes + reg_size -> %rdi = new_brkv
-
 	movq $12, %rax			# syscall brk
 	syscall
-	cmp $0, %rax			# if brk fail -> handle error
-	je _new_blk_fail
+	cmp %rdi, %rax			# if brk fail -> handle error
+	jne _new_blk_fail
 	movq %rdi, brkv
 	movq %rdi, %rax			# %rax = brkv + bytes + reg_size
 	subq $16, %rax			# %rax = brkv + bytes

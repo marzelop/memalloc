@@ -1,0 +1,80 @@
+Aluno:
+MARCELO GYOVANI PEREIRA		GRR20221225
+
+O código-fonte dos testes está no arquivo main.c, enquanto a API está implementada
+no arquivo memalloc.s. O arquivo teste.c possui alguns testes feitos no main.c, mas
+fazendo alocações de forma que os blocos tenham um alinhamento de 16-bytes.
+
+Os testes foram feitos de forma que ao ocorrerem sem problemas, seja imprimido a 
+palavra "Correto" e "Errado" caso contrário. Dessa forma, é possível rodar o comando
+"./main | grep Errado -b10 -a10 para verificar o que é impresso na região do erro.
+
+A alocação problemática tem seu tamanho definido numa macro no início do código
+(R_SIZE e R_SIZE_TEXT), onde toda alocação funciona corretamente para qualquer
+valor entre 1 e 46, sendo problemática após o valor de 47 até 85, quando já não
+é mais possível realizar a quebra do bloco.
+
+Uma função imprime informações sobre o bloco (disponibilidade, tamanho e endereço),
+e outra imprime exatamente o que está na memória (em hexadecimal). Dessa forma,
+a impressão da região da memória se dá de 8 em 8 bytes, onde o primeiro segmento
+representa a disponibilidade do bloco (0x1 -> usado, 0x0 -> livre), o segundo
+representa o tamanho do bloco, e em diante há o conteúdo do bloco (não inicializado).
+O valgrind deve apresentar vários avisos de uso de valor não inicializado por conta
+da impressão dessa região da memória, já que a mesma não foi inicializada, como esperado.
+
+Quando R_SIZE for 48, a saída esperada será semelhante a seguinte:
+
+Novo bloco livre:
+BLK: 0xbc92a2
+Used: no
+Size: 8020347986393432100
+O novo bloco vazio deve conter 36 bytes. Que seria 100 - 48 - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).
+Errado
+O novo bloco não deve estar ocupado. Correto
+
+0000000000000000 3030000000000024 3030303030303030 3320303030303030 3030303030303330 2034323030303030
+^Bloco livre     ^Tamanho errado  ^Lixo
+
+Parece haver algum problema na escrita de dados a partir dessa região da memória,
+já que os 2 bytes mais significativos, que deveriam estar com valor 0x00, estão
+com 0x30, semelhante ao lixo da mesma região. Entretanto, é possível ver que os
+bytes menos significativos estão corretos, o que fortalece a hipótese, já que 
+a arquitetura é little endian, ou seja, os bytes menos significativos estão
+num endereço menor, e a partir de um certo endereço a escrita falha. Entretanto,
+não há mudança de página entre os endereços.
+
+Agora, quando R_SIZE está definido para ter o valor de 48, temos a seguinte saída:
+
+Novo bloco livre:
+BLK: 0x18dd2a0
+Used: no
+Size: 38
+O novo bloco vazio deve conter 38 bytes. Que seria 100 - 46 - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).
+Correto
+O novo bloco não deve estar ocupado. Correto
+
+0000000000000000 0000000000000026 3030303030303030 3030303030303030 3030303030303020 3230303030303030 
+^Bloco livre     ^Tamanho correto ^Lixo
+
+Dessa forma, os bytes mais significativos estão corretos, e o tamanho tem o valor esperado,
+já que a escrita ocorreu sobre todos os 8 bytes necessários.
+
+Ao rodar com o valgrind e R_SIZE settado para 48, temos a seguinte saída (ignorando
+avisos uso de valores não inicializados).
+Novo bloco livre:
+BLK: 0x403c2a2
+Used: no
+Size: 36
+O novo bloco vazio deve conter 36 bytes. Que seria 100 - 48 - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).
+Correto
+O novo bloco não deve estar ocupado. Correto
+
+0000000000000000 0000000000000024 0000000000000000 0000000000000000 0000000000000000 0000000000000000
+^Bloco livre     ^Tamanho correto ^Lixo?
+
+Aparentemente, toda a memória não-inicializada no valgrind tem valor 0, o que faz
+com que coincidentemente o tamanho fique com o valor correto, o que explica o programa
+funcionar corretamente no valgrind. Entretanto, ainda não está claro o que causa o problema.
+
+O código que realiza a quebra do bloco está no arquivo memalloc.s, entre as linhas 65 e 73,
+onde a instrução problemática é "movq %r8, 8(%r9)" (linha 72).
