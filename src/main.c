@@ -1,5 +1,6 @@
 #include "main.h"
 
+//#define _GNU_SOURCE
 #define PTR_NUM 10
 #define R_SIZE       48
 #define R_SIZE_TEXT "48"
@@ -25,9 +26,18 @@ void printMemSegment(void *p, unsigned long before, unsigned long after) {
 	printf("\n");
 }
 
+void *malloc(size_t bytes) {
+	return memory_alloc(bytes);
+}
+
+void free(void *p) {
+	memory_free(p);
+}
+
 int main() {
 	void *p[PTR_NUM], *q, *r, *nb, *s, *big, *t, *brki;
 	int i;
+	//printf("AAA\n");
 	setup_brk();
 	brki = brkv;
 	printf("brk inicial: %p\n", brkv);
@@ -70,8 +80,6 @@ int main() {
 	printHeapBlockInfo(nb);
 	printf("O novo bloco vazio deve conter %u bytes. Que seria %u - "R_SIZE_TEXT" - 16 ((tamanho do bloco antigo completo) - (tamanho do novo bloco utilizado) - (tamanho do registro do bloco)).\n%s\n", 10*i - R_SIZE - 16, 10*i, getBlockSize(nb) == 10*i - R_SIZE - 16 ? "Correto" : "Errado");
 	printf("O novo bloco não deve estar ocupado. %s\n\n", blockAvailable(nb) ? "Correto" : "Errado");
-	printMemSegment(nb, 16, 32); // imprime as quadwords da memória na região do novo bloco em hexadecimal
-	// 16 bytes antes e 32 bytes depois
 
 	// Teste para verificação do first-fit
 	printf("Liberando p[%d].\n", PTR_NUM-2);
@@ -104,12 +112,11 @@ int main() {
 	printf("O bloco está depois de p[%d]? %s\n", PTR_NUM-1, t > p[PTR_NUM-1] ? "Sim, isso acontece porque o alocador não junta dois blocos vazios em sequência, ou seja, os blocos podem diminuir de tamanho, mas nunca aumentar." : "NÃO? Algo deve ter dado muito errado.\n");
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
 	printf("brki: %p\n", brki);
-	printf("&heap_start: %p\n", &brkv - 8);
 	// Problemas de Segmentatio Fault abaixo, irei resolver depois
 	dismiss_brk();
 	//printf("AAAAAA\n");
-	//printf("%p\n", brki);
-	// printf("brk atual: %p\n", brkv);
+	printf("%p\n", brki);
+	printf("brk atual: %p\n", brkv);
 	// printf("brk atual: %p\nbrk inicial: %p\nAmbos devem ser iguais. %s\n", brkv, brki, brkv == brki ? "Correto" : "Errado");
 
 	return 0;
