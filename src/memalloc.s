@@ -99,7 +99,24 @@ memory_alloc:
 memory_free:
 	cmp $0, %rdi			# if addr == NULL -> ret 0
 	je _free_null
+	cmpq heap_start, %rdi	# if addr < heap_start -> ret 1
+	jl _free_failout_heap
+	cmpq brkv, %rdi 		# if addr > brkv -> ret 1
+	jg _free_failout_heap
+	cmpq $0, -16(%rdi)		# if blk_used == 0 -> ret 2
+	je _free_fail_available_block
+	cmpq $1, -16(%rdi)		# if blk_used not in {0, 1} -> ret 3
+	jne _free_fail_invalid_block
 	movq $0, -16(%rdi)		# marca o bloco como disponível
 	_free_null:
 	movq $0, %rax			# retorna 0
+	ret
+	_free_failout_heap:
+	movq $1, %rax			# retorna 1
+	ret
+	_free_fail_available_block:
+	movq $2, %rax			# retorna 2
+	ret
+	_free_fail_invalid_block:
+	movq $3, %rax			# retorna 3
 	ret

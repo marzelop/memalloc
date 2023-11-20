@@ -18,26 +18,10 @@ void printHeapBlockInfo(void *p) {
 	printf("BLK: %p\nUsed: %s\nSize: %lu\n", p, !blockAvailable(p) ? "yes" : "no", getBlockSize(p));
 }
 
-// Printa os valores de uma região da memória em torno de um ponteiro p
-void printMemSegment(void *p, unsigned long before, unsigned long after) {
-	for (unsigned long *i = p - before; (void *) i < p + after; i++) {
-		printf("%016lx ", *i);
-	}
-	printf("\n");
-}
-
-void *malloc(size_t bytes) {
-	return memory_alloc(bytes);
-}
-
-void free(void *p) {
-	memory_free(p);
-}
-
 int main() {
 	void *p[PTR_NUM], *q, *r, *nb, *s, *big, *t, *brki;
 	int i;
-	//printf("AAA\n");
+	printf("Programa de teste memalloc\n");
 	setup_brk();
 	brki = brkv;
 	printf("brk inicial: %p\n", brkv);
@@ -51,7 +35,7 @@ int main() {
 		p[i] - p[i - 1] == (unsigned long) 10*i + 16 ? "Correto" : "Errado");
 	}
 	printHeapBlockInfo(p[i - 1]);
-	memory_free(p[0]);
+	printf("%d\n", memory_free(p[0]));
 	memory_free(p[PTR_NUM-1]);
 	printf("\n");
 
@@ -111,13 +95,9 @@ int main() {
 	printHeapBlockInfo(t);
 	printf("O bloco está depois de p[%d]? %s\n", PTR_NUM-1, t > p[PTR_NUM-1] ? "Sim, isso acontece porque o alocador não junta dois blocos vazios em sequência, ou seja, os blocos podem diminuir de tamanho, mas nunca aumentar." : "NÃO? Algo deve ter dado muito errado.\n");
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
-	printf("brki: %p\n", brki);
-	// Problemas de Segmentatio Fault abaixo, irei resolver depois
 	dismiss_brk();
-	//printf("AAAAAA\n");
 	printf("%p\n", brki);
-	printf("brk atual: %p\n", brkv);
-	// printf("brk atual: %p\nbrk inicial: %p\nAmbos devem ser iguais. %s\n", brkv, brki, brkv == brki ? "Correto" : "Errado");
+	printf("brk atual: %p\nbrk inicial: %p\nAmbos devem ser iguais. %s\n", brkv, brki, brkv == brki ? "Correto" : "Errado");
 
 	return 0;
 }
