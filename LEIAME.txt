@@ -42,9 +42,9 @@ Dessa forma, para resolver o problema, há duas alternativas:
 1. Chamar a função printf antes da função setup_brk: Sendo assim, todas as alocações
 realizadas pelo memalloc estará em uma região de memória posterior a região de alocação
 do malloc.
-2. Definir a função malloc dentro do main.c, tornando-a apenas um wrapper para a função
-memory_alloc: Essa solução é mais adequada, já que evita completamente o uso de dois 
-alocadores simultaneamente.
+2. Definir a função malloc, tornando-a apenas um wrapper para a função memory_alloc: 
+Essa solução é mais adequada, já que evita completamente o uso de dois alocadores 
+simultaneamente.
 
 Dentre as soluções, a medida escolhida foi a primeira por causa de um teste envolvendo
 a função dismiss_brk, que reinicia o brk para o seu valor inicial, o que causaria um

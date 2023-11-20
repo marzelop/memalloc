@@ -34,8 +34,8 @@ int main() {
 		printf("Distancia até o próximo bloco: %lu\nEsperado: %lu\n%s\n\n", p[i] - p[i - 1], (unsigned long) 10*i + 16, 
 		p[i] - p[i - 1] == (unsigned long) 10*i + 16 ? "Correto" : "Errado");
 	}
+	memory_free(p[0]);
 	printHeapBlockInfo(p[i - 1]);
-	printf("%d\n", memory_free(p[0]));
 	memory_free(p[PTR_NUM-1]);
 	printf("\n");
 
@@ -81,22 +81,26 @@ int main() {
 	}
 	
 	// Teste com grande alocação
-	// printf("Alocando 1GB.\n");
-	// big = memory_alloc(1*1024*1024*1024); // 1GB
-	// printHeapBlockInfo(big);
-	// printf("Bloco deve ter 1GB de tamanho. %s\n", getBlockSize(big) == 1*1024*1024*1024 ? "Correto" : "Errado");
-	// printf("Liberando 1GB.\n\n");
-	// memory_free(big);
+	printf("Alocando 1TB.\n");
+	big = memory_alloc((long)1024*1024*1024*1024);
+	if (!big) {
+		printf("Falha ao alocar 1TB, esperado. memory_alloc retornou NULL.\n\n");
+	}
+	else {
+		printHeapBlockInfo(big);
+		printf("Bloco deve ter 1TB de tamanho. %s\n", getBlockSize(big) == (long)1024*1024*1024*1024 ? "Correto" : "Errado");
+		printf("Liberando 1TB.\n\n");
+		memory_free(big);
+	}
 
 	// Aparentemente a alocação de 200 bytes funciona apesar do problema na alocação anterior
 	// Talvez a liberação de memória interfere em algo, mas não sei
 	printf("Alocando 200 bytes.\n");
 	t = memory_alloc(200);
 	printHeapBlockInfo(t);
-	printf("O bloco está depois de p[%d]? %s\n", PTR_NUM-1, t > p[PTR_NUM-1] ? "Sim, isso acontece porque o alocador não junta dois blocos vazios em sequência, ou seja, os blocos podem diminuir de tamanho, mas nunca aumentar." : "NÃO? Algo deve ter dado muito errado.\n");
+	printf("O bloco está depois de p[%d]? %s\n\n", PTR_NUM-1, t > p[PTR_NUM-1] ? "Sim, isso acontece porque o alocador não junta dois blocos vazios em sequência, ou seja, os blocos podem diminuir de tamanho, mas nunca aumentar." : "NÃO? Algo deve ter dado muito errado.");
 	printf("brk atual: %p\nRestaurando brk.\n", brkv);
 	dismiss_brk();
-	printf("%p\n", brki);
 	printf("brk atual: %p\nbrk inicial: %p\nAmbos devem ser iguais. %s\n", brkv, brki, brkv == brki ? "Correto" : "Errado");
 
 	return 0;
